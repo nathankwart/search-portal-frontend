@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { publicSettingsSchema } from "@shared";
 import { useAuth } from "@/auth";
@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/fields";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/keys";
+import { returnPathFrom } from "@/shell";
 
 export function SignupPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = returnPathFrom(location.state);
   const settings = useQuery({
     queryKey: keys.publicSettings,
     queryFn: () => api.get("/settings/public", publicSettingsSchema),
@@ -25,7 +28,7 @@ export function SignupPage() {
   usePageTitle("Create account");
 
   if (!settings.isLoading && settings.data && !settings.data.allowBuyerSignup) return <Navigate to="/login" replace />;
-  if (!auth.loading && auth.session) return <Navigate to="/" replace />;
+  if (!auth.loading && auth.session) return <Navigate to={returnTo} replace />;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -35,10 +38,11 @@ export function SignupPage() {
     try {
       const result = await auth.signUp(email, password);
       if (result === "confirm") {
+        sessionStorage.setItem("post-login-path", returnTo);
         setInfo("Check your email to confirm the account, then sign in.");
         return;
       }
-      navigate("/", { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not create the account");
     } finally {
@@ -66,7 +70,7 @@ export function SignupPage() {
             {pending ? "Creating account…" : "Create account"}
           </Button>
           <p className="text-center text-sm">
-            <Link className="font-medium text-primary underline" to="/login">
+            <Link className="font-medium text-primary underline" to="/login" state={{ from: returnTo }}>
               Already have an account? Sign in
             </Link>
           </p>

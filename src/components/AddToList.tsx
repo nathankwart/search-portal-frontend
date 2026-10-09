@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
 import { cartItemInputSchema, cartItemPatchSchema, cartSchema, currencySchema, type CartItem, type ProductDetail } from "@shared";
 import { toast } from "sonner";
+import { AuthPrompt } from "@/components/AuthPrompt";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/fields";
@@ -23,8 +23,6 @@ export function AddToListButton({
   searchEventId?: string;
   signedIn: boolean;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [quantity, setQuantity] = useState("1");
@@ -42,13 +40,12 @@ export function AddToListButton({
 
   if (!signedIn) {
     return (
-      <Button
-        type="button"
-        variant="primary"
-        onClick={() => navigate("/login", { state: { from: `${location.pathname}${location.search}` } })}
-      >
-        Add to sourcing list
-      </Button>
+      <>
+        <Button type="button" variant="primary" onClick={() => setOpen(true)}>
+          Add to sourcing list
+        </Button>
+        <AuthPrompt open={open} onOpenChange={setOpen} title="Sign in to save this product" />
+      </>
     );
   }
 
@@ -103,9 +100,8 @@ export function SourcingPanel({
   signedIn: boolean;
   searchEventId?: string;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
+  const [promptOpen, setPromptOpen] = useState(false);
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(String(cartItem?.quantity ?? 1));
   const [unit, setUnit] = useState(cartItem?.unit ?? product.unit ?? "");
@@ -160,9 +156,14 @@ export function SourcingPanel({
 
   if (!signedIn) {
     return (
-      <Button type="button" variant="primary" onClick={() => navigate("/login", { state: { from: `${location.pathname}${location.search}` } })}>
-        Sign in to add to your sourcing list
-      </Button>
+      <div className="space-y-3 rounded-lg border border-border bg-white p-4">
+        <h2 className="font-semibold">Add to sourcing list</h2>
+        <p className="text-sm text-muted-foreground">Save products and send an inquiry to our team with a free buyer account.</p>
+        <Button type="button" variant="primary" className="w-full" onClick={() => setPromptOpen(true)}>
+          Add to sourcing list
+        </Button>
+        <AuthPrompt open={promptOpen} onOpenChange={setPromptOpen} title="Sign in to save this product" />
+      </div>
     );
   }
 

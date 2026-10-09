@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { publicSettingsSchema, cartSchema } from "@shared";
 import { ClipboardList, LogOut, ShoppingCart, UserRound } from "lucide-react";
 import { useAuth } from "@/auth";
+import { AuthPrompt } from "@/components/AuthPrompt";
 import { SearchBox } from "@/components/SearchBox";
 import { buttonStyles } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const currency = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [cartPromptOpen, setCartPromptOpen] = useState(false);
   const showSearch = location.pathname !== "/";
   const cart = useQuery({
     queryKey: keys.cart,
@@ -128,10 +130,25 @@ export function AppShell() {
                 ))}
               </div>
             ) : null}
-            <Link to={auth.session ? "/cart" : "/login"} state={auth.session ? undefined : { from: "/cart" }} className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted" aria-label={`Sourcing list, ${count} items`}>
-              <ShoppingCart className="h-5 w-5" aria-hidden />
-              {count > 0 ? <span className="absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] text-accent-foreground">{count}</span> : null}
-            </Link>
+            {auth.session ? (
+              <Link to="/cart" className="relative inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted" aria-label={`Sourcing list, ${count} items`}>
+                <ShoppingCart className="h-5 w-5" aria-hidden />
+                {count > 0 ? <span className="absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] text-accent-foreground">{count}</span> : null}
+              </Link>
+            ) : (
+              <>
+                <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted" aria-label="Sourcing list" onClick={() => setCartPromptOpen(true)}>
+                  <ShoppingCart className="h-5 w-5" aria-hidden />
+                </button>
+                <AuthPrompt
+                  open={cartPromptOpen}
+                  onOpenChange={setCartPromptOpen}
+                  title="Sign in to see your sourcing list"
+                  description="Create a free buyer account or sign in to build a sourcing list and send inquiries. You can keep browsing without an account."
+                  from="/cart"
+                />
+              </>
+            )}
             {auth.session ? (
               <div className="relative">
                 <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-muted" aria-expanded={menuOpen} aria-haspopup="menu" aria-label="Account menu" onClick={() => setMenuOpen((open) => !open)}>

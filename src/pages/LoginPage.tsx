@@ -137,7 +137,7 @@ export function LoginPage() {
           </Button>
           {settings.data?.allowBuyerSignup && !needsPassword ? (
             <p className="text-center text-sm">
-              <Link className="font-medium text-primary underline" to="/signup">
+              <Link className="font-medium text-primary underline" to="/signup" state={location.state}>
                 Create a buyer account
               </Link>
             </p>

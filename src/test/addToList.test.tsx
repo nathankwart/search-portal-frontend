@@ -35,11 +35,22 @@ describe("add to sourcing list", () => {
     post.mockReset();
   });
 
-  it("sends a signed-out buyer to sign in", async () => {
+  it("prompts a signed-out buyer to sign in", async () => {
     const user = userEvent.setup();
     renderCard(false);
     await user.click(screen.getByRole("button", { name: "Add to sourcing list" }));
+    expect(screen.getByRole("dialog", { name: "Sign in to save this product" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Sign in" }));
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it("lets a signed-out buyer keep browsing", async () => {
+    const user = userEvent.setup();
+    renderCard(false);
+    await user.click(screen.getByRole("button", { name: "Add to sourcing list" }));
+    await user.click(screen.getByRole("button", { name: "Keep browsing" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(post).not.toHaveBeenCalled();
   });
 
