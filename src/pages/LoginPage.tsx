@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
 import { publicSettingsSchema } from "@shared";
 import { useAuth } from "@/auth";
 import { AuthFrame } from "@/components/AuthFrame";
@@ -123,8 +123,9 @@ export function LoginPage() {
           <FieldError message={error} />
         </div>
       ) : null}
-      <Button type="submit" variant="primary" className="mt-1 h-11 w-full rounded-2xl text-base shadow-sm" disabled={pending}>
-        {pending ? (needsPassword ? "Saving…" : "Signing in…") : needsPassword ? "Save password" : "Sign in"}
+      <Button type="submit" variant="primary" className="mt-1 h-11 w-full rounded-2xl text-base shadow-sm disabled:opacity-100" disabled={pending} aria-busy={pending}>
+        {pending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : null}
+        {pending ? (needsPassword ? "Saving" : "Signing in") : needsPassword ? "Save password" : "Sign in"}
       </Button>
       {settings.data?.allowBuyerSignup && !needsPassword ? (
         <p className="text-center text-sm text-muted-foreground">
