@@ -119,6 +119,9 @@ export const api = {
   post<T>(path: string, body: unknown, schema?: ZodType<T>, options?: RequestOptions) {
     return request(path, { method: "POST", body: JSON.stringify(body ?? {}) }, schema, options);
   },
+  postForm<T>(path: string, body: FormData, schema?: ZodType<T>, options?: RequestOptions) {
+    return request(path, { method: "POST", body }, schema, options);
+  },
   patch<T>(path: string, body: unknown, schema?: ZodType<T>, options?: RequestOptions) {
     return request(path, { method: "PATCH", body: JSON.stringify(body ?? {}) }, schema, options);
   },

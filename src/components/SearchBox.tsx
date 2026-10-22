@@ -1,10 +1,15 @@
-import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { searchResponseSchema } from "@shared";
+import { ImagePlus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { suggestSchema } from "@/lib/contracts";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/keys";
+import { searchPath } from "@/lib/searchState";
+import { getSessionId } from "@/lib/session";
 import { useDebounced } from "@/lib/useDebounced";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +35,11 @@ export function SearchBox({
   rotatePlaceholder?: boolean;
 }) {
   const listId = useId();
+  const imageInput = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const [text, setText] = useState(value);
+  const [readingImage, setReadingImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [example, setExample] = useState(0);
@@ -81,6 +90,37 @@ export function SearchBox({
     }
   }
 
+  async function onImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || readingImage) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Images must be jpg, png, or webp");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Images must be no larger than 5 MB");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    setReadingImage(true);
+    setOpen(false);
+    try {
+      const body = new FormData();
+      body.set("image", file);
+      body.set("sessionId", getSessionId());
+      const result = await api.postForm("/search/image", body, searchResponseSchema);
+      navigate(searchPath({ q: result.query, page: 1, filters: {}, suppressed: [] }), { state: { imageSearch: result } });
+    } catch {
+      // The API client already shows the error.
+    } finally {
+      setReadingImage(false);
+      URL.revokeObjectURL(url);
+      setPreviewUrl(null);
+    }
+  }
+
   const hero = size === "hero";
 
   return (
@@ -119,11 +159,22 @@ export function SearchBox({
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
         />
-        <Button type="submit" variant="primary" className={cn("shrink-0 rounded-xl", hero ? "h-12 px-5" : "h-11 px-3")}>
+        <Button type="submit" variant="primary" className={cn("shrink-0 rounded-xl", hero ? "h-12 px-5" : "h-11 px-3")} disabled={readingImage}>
           {hero ? null : <Search className="h-4 w-4" aria-hidden="true" />}
           <span className={size === "compact" ? "hidden sm:inline" : undefined}>Search</span>
         </Button>
+        <input ref={imageInput} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void onImage(event)} />
+        <Button type="button" variant="outline" className={cn("shrink-0 rounded-xl px-3", hero ? "h-12" : "h-11")} disabled={readingImage} aria-busy={readingImage} onClick={() => imageInput.current?.click()}>
+          <ImagePlus className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">{readingImage ? "Reading the photo" : "Search by image"}</span>
+        </Button>
       </div>
+      {previewUrl ? (
+        <p className="mt-2 flex items-center gap-2 text-left text-sm text-muted-foreground" role="status">
+          <img src={previewUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+          Reading the photo…
+        </p>
+      ) : null}
       {open && debounced.length >= 2 ? (
         <ul id={listId} role="listbox" className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-border bg-card text-left shadow-lg">
           {suggest.isLoading ? <li className="px-3 py-3 text-sm text-muted-foreground">Looking up suggestions…</li> : null}
