@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { suggestSchema } from "@/lib/contracts";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/keys";
@@ -80,17 +81,27 @@ export function SearchBox({
     }
   }
 
+  const hero = size === "hero";
+
   return (
     <form onSubmit={onSubmit} className="relative w-full" role="search">
-      <label htmlFor={id} className={size === "hero" ? "mb-2 block text-left text-sm font-medium" : "sr-only"}>
-        {size === "hero" ? "What do you need from China?" : "Search"}
+      <label htmlFor={id} className={hero ? "mb-2 block text-left text-sm font-medium" : "sr-only"}>
+        {hero ? "What do you need from China?" : "Search"}
       </label>
-      <div className="flex gap-2">
+      <div
+        className={cn(
+          "flex items-center",
+          hero ? "gap-2 rounded-2xl border border-border bg-background p-1.5 shadow-sm focus-within:ring-2 focus-within:ring-ring" : "gap-2",
+        )}
+      >
+        {hero ? <Search className="ml-2.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
         <input
           id={id}
           className={cn(
-            "min-w-0 flex-1 rounded-md border border-border bg-white px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            size === "hero" ? "min-h-14 text-base" : "min-h-11 text-sm",
+            "min-w-0 flex-1 bg-white outline-none",
+            hero
+              ? "h-12 border-0 bg-transparent px-1 text-base focus-visible:ring-0"
+              : "min-h-11 rounded-md border border-border px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring",
           )}
           value={text}
           maxLength={300}
@@ -108,13 +119,13 @@ export function SearchBox({
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
         />
-        <button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground">
-          <Search className="h-4 w-4" aria-hidden />
+        <Button type="submit" variant="primary" className={cn("shrink-0 rounded-xl", hero ? "h-12 px-5" : "h-11 px-3")}>
+          {hero ? null : <Search className="h-4 w-4" aria-hidden="true" />}
           <span className={size === "compact" ? "hidden sm:inline" : undefined}>Search</span>
-        </button>
+        </Button>
       </div>
       {open && debounced.length >= 2 ? (
-        <ul id={listId} role="listbox" className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border border-border bg-white text-left shadow-lg">
+        <ul id={listId} role="listbox" className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-border bg-card text-left shadow-lg">
           {suggest.isLoading ? <li className="px-3 py-3 text-sm text-muted-foreground">Looking up suggestions…</li> : null}
           {!suggest.isLoading && suggestions.length === 0 ? <li className="px-3 py-3 text-sm text-muted-foreground">No suggestions</li> : null}
           {suggestions.map((item, index) => (
