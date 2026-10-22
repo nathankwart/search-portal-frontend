@@ -24,7 +24,7 @@ export function ProductCard({
 }) {
   const place = [product.supplier.city, product.supplier.province].filter(Boolean).join(", ");
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-white">
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <Link
         to={`/products/${product.id}`}
         state={{ searchEventId, position }}
