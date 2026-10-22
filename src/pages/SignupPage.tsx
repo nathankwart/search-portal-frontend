@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { LockKeyhole, Mail } from "lucide-react";
 import { publicSettingsSchema } from "@shared";
 import { useAuth } from "@/auth";
+import { AuthFrame } from "@/components/AuthFrame";
 import { usePageTitle } from "@/components/feedback";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/fields";
@@ -51,31 +53,36 @@ export function SignupPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-primary px-4 py-10">
-      <form onSubmit={onSubmit} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">China sourcing</p>
-        <h1 className="mt-1 text-2xl font-semibold">Create a buyer account</h1>
-        <div className="mt-6 space-y-4">
-          <div>
-            <Label htmlFor="signup-email">Email</Label>
-            <Input id="signup-email" className="mt-1" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="signup-password">Password</Label>
-            <Input id="signup-password" className="mt-1" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
-          </div>
-          <FieldError message={error || undefined} />
-          {info ? <p className="text-sm text-accent">{info}</p> : null}
-          <Button type="submit" variant="primary" className="w-full" disabled={pending || settings.isLoading}>
-            {pending ? "Creating account…" : "Create account"}
-          </Button>
-          <p className="text-center text-sm">
-            <Link className="font-medium text-primary underline" to="/login" state={{ from: returnTo }}>
-              Already have an account? Sign in
-            </Link>
-          </p>
+    <AuthFrame title="Create a buyer account" description="Use your work email. You can search factories and send a sourcing list after the account is ready." onSubmit={onSubmit}>
+      <SignupField id="signup-email" label="Email" icon={<Mail className="h-4 w-4" aria-hidden="true" />} type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+      <SignupField id="signup-password" label="Password" icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />} type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
+      {error ? (
+        <div className="rounded-2xl bg-destructive/10 px-3 py-2">
+          <FieldError message={error} />
         </div>
-      </form>
+      ) : null}
+      {info ? <p className="rounded-2xl bg-accent/10 px-3 py-2 text-sm text-accent">{info}</p> : null}
+      <Button type="submit" variant="primary" className="h-12 w-full rounded-2xl text-base shadow-sm" disabled={pending || settings.isLoading}>
+        {pending ? "Creating account…" : "Create account"}
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link className="font-semibold text-primary" to="/login" state={{ from: returnTo }}>
+          Sign in
+        </Link>
+      </p>
+    </AuthFrame>
+  );
+}
+
+function SignupField({ id, label, icon, ...props }: ComponentProps<typeof Input> & { id: string; label: string; icon: ReactNode }) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative mt-1.5">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>
+        <Input id={id} className="h-12 rounded-2xl bg-background pl-10 shadow-none" {...props} />
+      </div>
     </div>
   );
 }

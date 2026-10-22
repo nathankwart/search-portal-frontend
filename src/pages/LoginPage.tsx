@@ -1,8 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { publicSettingsSchema } from "@shared";
 import { useAuth } from "@/auth";
+import { AuthFrame } from "@/components/AuthFrame";
 import { usePageTitle } from "@/components/feedback";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label } from "@/components/ui/fields";
@@ -36,6 +38,7 @@ export function LoginPage() {
   const [needsPassword, setNeedsPassword] = useState(captureInviteCallback);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   usePageTitle(needsPassword ? "Set your password" : "Sign in");
 
   useEffect(() => {
@@ -94,56 +97,73 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-primary px-4 py-10">
-      <form onSubmit={needsPassword ? onSetPassword : onSubmit} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">China sourcing</p>
-        <h1 className="mt-1 text-2xl font-semibold">{needsPassword ? "Set your password" : "Sign in"}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {needsPassword
-            ? "Choose a password to finish your account. You will use it the next time you sign in."
-            : "Search Chinese factories, build a sourcing list, and send it to your team."}
-        </p>
-        <div className="mt-6 space-y-4">
-          {needsPassword ? (
-            <>
-              <div>
-                <Label htmlFor="invite-email">Email</Label>
-                <Input id="invite-email" className="mt-1" type="email" value={auth.session?.user.email ?? ""} readOnly />
-              </div>
-              <div>
-                <Label htmlFor="new-password">Password</Label>
-                <Input id="new-password" className="mt-1" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="confirm-password">Confirm password</Label>
-                <Input id="confirm-password" className="mt-1" type="password" autoComplete="new-password" required minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" className="mt-1" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" className="mt-1" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-              </div>
-            </>
-          )}
-          <FieldError message={error || undefined} />
-          <Button type="submit" variant="primary" className="w-full" disabled={pending}>
-            {pending ? (needsPassword ? "Saving…" : "Signing in…") : needsPassword ? "Save password" : "Sign in"}
-          </Button>
-          {settings.data?.allowBuyerSignup && !needsPassword ? (
-            <p className="text-center text-sm">
-              <Link className="font-medium text-primary underline" to="/signup" state={location.state}>
-                Create a buyer account
-              </Link>
-            </p>
-          ) : null}
+    <AuthFrame
+      title={needsPassword ? "Set your password" : "Sign in"}
+      description={
+        needsPassword
+          ? "Choose a password to finish your account. You will use it the next time you sign in."
+          : "Search Chinese factories, build a sourcing list, and send it to your team."
+      }
+      onSubmit={needsPassword ? onSetPassword : onSubmit}
+    >
+      {needsPassword ? (
+        <>
+          <AuthField id="invite-email" label="Email" icon={<Mail className="h-4 w-4" aria-hidden="true" />} type="email" value={auth.session?.user.email ?? ""} readOnly />
+          <AuthField id="new-password" label="Password" icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />} type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} revealed={showPassword} onToggleReveal={() => setShowPassword((value) => !value)} />
+          <AuthField id="confirm-password" label="Confirm password" icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />} type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+        </>
+      ) : (
+        <>
+          <AuthField id="email" label="Email" icon={<Mail className="h-4 w-4" aria-hidden="true" />} type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <AuthField id="password" label="Password" icon={<LockKeyhole className="h-4 w-4" aria-hidden="true" />} type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} revealed={showPassword} onToggleReveal={() => setShowPassword((value) => !value)} />
+        </>
+      )}
+      {error ? (
+        <div className="rounded-2xl bg-destructive/10 px-3 py-2">
+          <FieldError message={error} />
         </div>
-      </form>
+      ) : null}
+      <Button type="submit" variant="primary" className="mt-1 h-11 w-full rounded-2xl text-base shadow-sm" disabled={pending}>
+        {pending ? (needsPassword ? "Saving…" : "Signing in…") : needsPassword ? "Save password" : "Sign in"}
+      </Button>
+      {settings.data?.allowBuyerSignup && !needsPassword ? (
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{" "}
+          <Link className="font-semibold text-primary" to="/signup" state={location.state}>
+            Create a buyer account
+          </Link>
+        </p>
+      ) : null}
+    </AuthFrame>
+  );
+}
+
+function AuthField({
+  id,
+  label,
+  icon,
+  revealed,
+  onToggleReveal,
+  ...props
+}: ComponentProps<typeof Input> & {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  revealed?: boolean;
+  onToggleReveal?: () => void;
+}) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative mt-1.5">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>
+        <Input id={id} className="h-11 rounded-2xl bg-background pl-10 pr-12 shadow-none" {...props} />
+        {onToggleReveal ? (
+          <button type="button" className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted" onClick={onToggleReveal} aria-label={revealed ? "Hide password" : "Show password"}>
+            {revealed ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
